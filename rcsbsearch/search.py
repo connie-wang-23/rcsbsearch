@@ -150,7 +150,7 @@ class Query(ABC):
         ...
 
     def and_(
-        self, other: Union[str, "Query", "Attr"]
+            self, other: Union[str, "Query", "Attr"]
     ) -> Union["Query", "PartialQuery"]:
         """Extend this query with an additional attribute via an AND"""
         if isinstance(other, Query):
@@ -205,7 +205,7 @@ class Terminal(Query):
     operator: Optional[str] = None
     value: Optional[TValue] = None
     service: str = "text"
-    negation: bool = False
+    negation: Optional[bool] = None # CW changed
     node_id: int = 0
 
     def to_dict(self):
@@ -274,14 +274,14 @@ class Terminal(Query):
 class TextQuery(Terminal):
     """Special case of a Terminal for free-text queries"""
 
-    def __init__(self, value: str, negation: bool = False):
+    def __init__(self, value: str, negation: Optional[bool] = None):
         """Search for the string value anywhere in the text
 
         Args:
             value: free-text query
             negation: find structures without the pattern
         """
-        super().__init__(value=value, negation=negation)
+        super().__init__(value=value, negation=negation, service="full_text") # CW added full_text here for service
 
 
 @dataclass(frozen=True)
@@ -405,7 +405,7 @@ class Attr:
         return Terminal(self.attribute, "exact_match", value)
 
     def contains_words(
-        self, value: Union[str, "Value[str]", List[str], "Value[List[str]]"]
+            self, value: Union[str, "Value[str]", List[str], "Value[List[str]]"]
     ) -> Terminal:
         """Match any word within the string.
 
@@ -465,10 +465,10 @@ class Attr:
         return Terminal(self.attribute, "range", value)
 
     def range_closed(
-        self,
-        value: Union[
-            List[int], Tuple[int, int], "Value[List[int]]", "Value[Tuple[int, int]]"
-        ],
+            self,
+            value: Union[
+                List[int], Tuple[int, int], "Value[List[int]]", "Value[Tuple[int, int]]"
+            ],
     ) -> Terminal:
         """Attribute is within the specified closed range
 
@@ -484,25 +484,25 @@ class Attr:
         return Terminal(self.attribute, "exists")
 
     def in_(
-        self,
-        value: Union[
-            List[str],
-            List[int],
-            List[float],
-            List[date],
-            Tuple[str, ...],
-            Tuple[int, ...],
-            Tuple[float, ...],
-            Tuple[date, ...],
-            "Value[List[str]]",
-            "Value[List[int]]",
-            "Value[List[float]]",
-            "Value[List[date]]",
-            "Value[Tuple[str, ...]]",
-            "Value[Tuple[int, ...]]",
-            "Value[Tuple[float, ...]]",
-            "Value[Tuple[date, ...]]",
-        ],
+            self,
+            value: Union[
+                List[str],
+                List[int],
+                List[float],
+                List[date],
+                Tuple[str, ...],
+                Tuple[int, ...],
+                Tuple[float, ...],
+                Tuple[date, ...],
+                "Value[List[str]]",
+                "Value[List[int]]",
+                "Value[List[float]]",
+                "Value[List[date]]",
+                "Value[Tuple[str, ...]]",
+                "Value[Tuple[int, ...]]",
+                "Value[Tuple[float, ...]]",
+                "Value[Tuple[date, ...]]",
+            ],
     ) -> Terminal:
         """Attribute is contained in the list of values"""
         if isinstance(value, Value):
@@ -517,33 +517,33 @@ class Attr:
 
     @overload  # type: ignore[override]
     def __eq__(
-        self,
-        value: Union[
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Terminal:
         ...
 
     def __eq__(
-        self,
-        value: Union[
-            "Attr",
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                "Attr",
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Union[Terminal, bool]:  # type: ignore[override]
         if isinstance(value, Attr):
             return self.attribute == value.attribute
@@ -552,9 +552,9 @@ class Attr:
         if isinstance(value, str):
             return self.exact_match(value)
         elif (
-            isinstance(value, date)
-            or isinstance(value, float)
-            or isinstance(value, int)
+                isinstance(value, date)
+                or isinstance(value, float)
+                or isinstance(value, int)
         ):
             return self.equals(value)
         else:
@@ -566,33 +566,33 @@ class Attr:
 
     @overload  # type: ignore[override]
     def __ne__(
-        self,
-        value: Union[
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Terminal:
         ...
 
     def __ne__(
-        self,
-        value: Union[
-            "Attr",
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                "Attr",
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Union[Terminal, bool]:  # type: ignore[override]
         if isinstance(value, Attr):
             return self.attribute != value.attribute
@@ -624,7 +624,7 @@ class Attr:
         return self.exists()
 
     def __contains__(
-        self, value: Union[str, List[str], "Value[str]", "Value[List[str]]"]
+            self, value: Union[str, List[str], "Value[str]", "Value[List[str]]"]
     ) -> Terminal:
         """Maps to contains_words or contains_phrase depending on the value passed.
 
@@ -700,7 +700,7 @@ class PartialQuery:
 
     @_attr_delegate(Attr.contains_words)
     def contains_words(
-        self, value: Union[str, "Value[str]", List[str], "Value[List[str]]"]
+            self, value: Union[str, "Value[str]", List[str], "Value[List[str]]"]
     ) -> Query:
         ...
 
@@ -734,10 +734,10 @@ class PartialQuery:
 
     @_attr_delegate(Attr.range_closed)
     def range_closed(
-        self,
-        value: Union[
-            List[int], Tuple[int, int], "Value[List[int]]", "Value[Tuple[int, int]]"
-        ],
+            self,
+            value: Union[
+                List[int], Tuple[int, int], "Value[List[int]]", "Value[Tuple[int, int]]"
+            ],
     ) -> Query:
         ...
 
@@ -747,17 +747,17 @@ class PartialQuery:
 
     @_attr_delegate(Attr.in_)
     def in_(
-        self,
-        value: Union[
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Query:
         ...
 
@@ -767,39 +767,39 @@ class PartialQuery:
 
     @overload  # type: ignore[override]
     def __eq__(
-        self,
-        value: Union[
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Query:
         ...
 
     def __eq__(
-        self,
-        value: Union[
-            "PartialQuery",
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                "PartialQuery",
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Union[Query, bool]:  # type: ignore[override]
         if isinstance(value, PartialQuery):
             return (
-                self.attr == value.attr
-                and self.query == value.query
-                and self.operator == value.operator
+                    self.attr == value.attr
+                    and self.query == value.query
+                    and self.operator == value.operator
             )
 
         if self.operator == "and":
@@ -815,33 +815,33 @@ class PartialQuery:
 
     @overload  # type: ignore[override]
     def __ne__(
-        self,
-        value: Union[
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Query:
         ...
 
     def __ne__(
-        self,
-        value: Union[
-            "PartialQuery",
-            str,
-            int,
-            float,
-            date,
-            "Value[str]",
-            "Value[int]",
-            "Value[float]",
-            "Value[date]",
-        ],
+            self,
+            value: Union[
+                "PartialQuery",
+                str,
+                int,
+                float,
+                date,
+                "Value[str]",
+                "Value[int]",
+                "Value[float]",
+                "Value[date]",
+            ],
     ) -> Union[Query, bool]:  # type: ignore[override]
         if isinstance(value, PartialQuery):
             return self.attr != value.attr
@@ -869,7 +869,7 @@ class PartialQuery:
 
     @_attr_delegate(Attr.__contains__)
     def __contains__(
-        self, value: Union[str, List[str], "Value[str]", "Value[List[str]]"]
+            self, value: Union[str, List[str], "Value[str]", "Value[List[str]]"]
     ) -> Query:
         ...
 
@@ -927,9 +927,9 @@ class Value(Generic[T]):
         if not isinstance(attr, Attr):
             return NotImplemented
         if not (
-            isinstance(self.value, int)
-            or isinstance(self.value, float)
-            or isinstance(self.value, date)
+                isinstance(self.value, int)
+                or isinstance(self.value, float)
+                or isinstance(self.value, date)
         ):
             return NotImplemented
         return attr.greater(self.value)
@@ -938,9 +938,9 @@ class Value(Generic[T]):
         if not isinstance(attr, Attr):
             return NotImplemented
         if not (
-            isinstance(self.value, int)
-            or isinstance(self.value, float)
-            or isinstance(self.value, date)
+                isinstance(self.value, int)
+                or isinstance(self.value, float)
+                or isinstance(self.value, date)
         ):
             return NotImplemented
         return attr.greater_or_equal(self.value)
@@ -949,9 +949,9 @@ class Value(Generic[T]):
         if not isinstance(attr, Attr):
             return NotImplemented
         if not (
-            isinstance(self.value, int)
-            or isinstance(self.value, float)
-            or isinstance(self.value, date)
+                isinstance(self.value, int)
+                or isinstance(self.value, float)
+                or isinstance(self.value, date)
         ):
             return NotImplemented
         return attr.less(self.value)
@@ -960,9 +960,9 @@ class Value(Generic[T]):
         if not isinstance(attr, Attr):
             return NotImplemented
         if not (
-            isinstance(self.value, int)
-            or isinstance(self.value, float)
-            or isinstance(self.value, date)
+                isinstance(self.value, int)
+                or isinstance(self.value, float)
+                or isinstance(self.value, date)
         ):
             return NotImplemented
         return attr.less_or_equal(self.value)
@@ -982,7 +982,7 @@ class Session(Iterable[str]):
     rows: int
 
     def __init__(
-        self, query: Query, return_type: ReturnType = "entry", rows: int = 100
+            self, query: Query, return_type: ReturnType = "entry", rows: int = 100
     ):
         self.query_id = Session.make_uuid()
         self.query = query.assign_ids()

@@ -154,7 +154,7 @@ def test_example1():
 def test_example2():
     "'X-Ray Structures Search' from http://search.rcsb.org/#examples"
     q = (
-        Terminal(value='"thymidine kinase"')
+        Terminal(value='"thymidine kinase"', service="full_text")
         & Terminal(
             "rcsb_entity_source_organism.taxonomy_lineage.name",
             "exact_match",
